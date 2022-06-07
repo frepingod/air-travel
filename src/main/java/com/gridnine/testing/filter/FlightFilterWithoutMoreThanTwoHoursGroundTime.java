@@ -4,29 +4,24 @@ import com.gridnine.testing.testdata.Flight;
 import com.gridnine.testing.testdata.Segment;
 
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class FlightFilterWithoutMoreThanTwoHoursGroundTime implements FlightFilter {
 
+    private static final int GROUND_TIME_TO_MINUTES = 120;
+
     @Override
     public List<Flight> filter(List<Flight> flights) {
-        final List<Flight> result = new ArrayList<>();
-        for (Flight flight : flights) {
-            final List<Segment> segments = flight.getSegments();
-            long groundTime = 0;
+        return flights.stream()
+                .filter(flight -> getGroundTime(flight.getSegments()) <= GROUND_TIME_TO_MINUTES)
+                .collect(Collectors.toList());
+    }
 
-            for (int i = 0; i < segments.size() - 1; i++) {
-                groundTime += Duration.between(segments.get(i).getArrivalDate(), segments.get(i + 1).getDepartureDate()).toMinutes();
-                if (groundTime > 120) {
-                    break;
-                }
-            }
-
-            if (groundTime <= 120) {
-                result.add(flight);
-            }
-        }
-        return result;
+    private int getGroundTime(List<Segment> segments) {
+        return IntStream.range(0, segments.size() - 1)
+                .map(i -> (int) Duration.between(segments.get(i).getArrivalDate(), segments.get(i + 1).getDepartureDate()).toMinutes())
+                .sum();
     }
 }
